@@ -25,7 +25,7 @@ func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) 
 		return nil, result.Error
 	}
 
-	result = r.DB.Find(&todo, newTodo.ID)
+	result = r.DB.Preload("User").Find(&todo, newTodo.ID)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -38,7 +38,7 @@ func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
 	var todos []*entity.Todo
 
 	sql := r.DB.Model(&entity.Todo{})
-	result := sql.Find(&todos)
+	result := sql.Preload("User").Find(&todos)
 	if result.Error != nil {
 		return nil, result.Error
 	}
