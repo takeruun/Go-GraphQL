@@ -4,20 +4,46 @@ package resolver
 // will be copied through when generating and any unknown code will be moved to the end.
 
 import (
+	"app/entity"
 	"app/graph/generated"
 	"app/graph/model"
 	"context"
+	"strconv"
 )
 
 // CreateTodo is the resolver for the createTodo field.
 func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	return nil, nil
+	var todo entity.Todo
+
+	userId, _ := strconv.Atoi(input.UserID)
+	newTodo := &entity.Todo{
+		Text:   input.Text,
+		UserID: uint64(userId),
+	}
+	result := r.DB.Create(newTodo)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	result = r.DB.Find(&todo, newTodo.ID)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return entity.ToModelTodo(&todo), nil
 }
 
 // Todos is the resolver for the todos field.
-func (r *queryResolver) Todos(ctx context.Context) (todos []*model.Todo, err error) {
-	todos = append(todos, &model.Todo{ID: "2", Text: "test", Done: true, User: nil})
-	return todos, nil
+func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
+	var todos []*entity.Todo
+
+	sql := r.DB.Model(&entity.Todo{})
+	result := sql.Find(&todos)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return entity.ToModelTodos(todos), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
